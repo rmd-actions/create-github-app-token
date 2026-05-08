@@ -195,10 +195,32 @@ jobs:
           body: "Hello, World!"
 ```
 
+### Create a token for an enterprise installation
+
+```yaml
+on: [workflow_dispatch]
+
+jobs:
+  hello-world:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/create-github-app-token@v3
+        id: app-token
+        with:
+          client-id: ${{ vars.APP_CLIENT_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          enterprise: my-enterprise-slug
+      - name: Call enterprise management REST API with gh
+        run: |
+          gh api /enterprises/my-enterprise-slug/apps/installable_organizations
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+```
+
 ### Create a token with specific permissions
 
 > [!NOTE]
-> Selected permissions must be granted to the installation of the specified app and repository owner. Setting a permission that the installation does not have will result in an error.
+> Selected permissions must be granted to the specified app installation. Setting a permission that the installation does not have will result in an error.
 
 ```yaml
 on: [issues]
@@ -356,6 +378,13 @@ steps:
 > [!NOTE]
 > If `owner` is set and `repositories` is empty, access will be scoped to all repositories in the provided repository owner's installation. If `owner` and `repositories` are empty, access will be scoped to only the current repository.
 
+### `enterprise`
+
+**Optional:** The slug of the enterprise account to generate a token for an enterprise installation.
+
+> [!NOTE]
+> The `enterprise` input is mutually exclusive with `owner` and `repositories`. Use it when the GitHub App is installed on an enterprise account. Enterprise installation tokens can call enterprise APIs, but do not grant organization or repository access.
+
 ### `permission-<permission name>`
 
 **Optional:** The permissions to grant to the token. By default, the token inherits all of the installation's permissions. We recommend to explicitly list the permissions that are required for a use case. This follows GitHub's own recommendation to [control permissions of `GITHUB_TOKEN` in workflows](https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/controlling-permissions-for-github_token). The documentation also lists all available permissions, just prefix the permission key with `permission-` (e.g., `pull-requests` → `permission-pull-requests`).
@@ -386,13 +415,14 @@ GitHub App slug.
 
 ## How it works
 
-The action creates an installation access token using [the `POST /app/installations/{installation_id}/access_tokens` endpoint](https://docs.github.com/rest/apps/apps?apiVersion=2022-11-28#create-an-installation-access-token-for-an-app). By default,
+The action creates an installation access token using [the `POST /app/installations/{installation_id}/access_tokens` endpoint](https://docs.github.com/rest/apps/apps?apiVersion=2022-11-28#create-an-installation-access-token-for-an-app).
 
-1. The token is scoped to the current repository or `repositories` if set.
-2. The token inherits all the installation's permissions.
-3. The token is set as output `token` which can be used in subsequent steps.
-4. Unless the `skip-token-revoke` input is set to true, the token is revoked in the `post` step of the action, which means it cannot be passed to another job.
-5. The token is masked, it cannot be logged accidentally.
+The token target depends on the inputs: `enterprise` creates a token for an enterprise installation, `owner` without `repositories` creates a token for all repositories in the owner's installation, `repositories` scopes the token to those repositories, and no target inputs scopes the token to the current repository.
+
+1. The token inherits all the installation's permissions.
+2. The token is set as output `token` which can be used in subsequent steps.
+3. Unless the `skip-token-revoke` input is set to true, the token is revoked in the `post` step of the action, which means it cannot be passed to another job.
+4. The token is masked, it cannot be logged accidentally.
 
 > [!NOTE]
 > Installation permissions can differ from the app's permissions they belong to. Installation permissions are set when an app is installed on an account. When the app adds more permissions after the installation, an account administrator will have to approve the new permissions before they are set on the installation.
