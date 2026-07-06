@@ -9,10 +9,10 @@ GitHub Action for creating a GitHub App installation access token.
 In order to use this action, you need to:
 
 1. [Register new GitHub App](https://docs.github.com/apps/creating-github-apps/setting-up-a-github-app/creating-a-github-app).
-2. [Store the App's Client ID in your repository environment variables](https://docs.github.com/actions/how-tos/write-workflows/choose-what-workflows-do/use-variables#defining-configuration-variables-for-multiple-workflows) (example: `GITHUB_APP_CLIENT_ID`).
-3. [Store the App's private key in your repository secrets](https://docs.github.com/actions/how-tos/write-workflows/choose-what-workflows-do/use-secrets?tool=webui#creating-secrets-for-a-repository) (example: `GITHUB_APP_PRIVATE_KEY`).
+2. [Store the App's Client ID in your repository variables](https://docs.github.com/actions/how-tos/write-workflows/choose-what-workflows-do/use-variables#defining-configuration-variables-for-multiple-workflows) (example: `APP_CLIENT_ID`).
+3. [Store the App's private key in your repository secrets](https://docs.github.com/actions/how-tos/write-workflows/choose-what-workflows-do/use-secrets?tool=webui#creating-secrets-for-a-repository) (example: `APP_PRIVATE_KEY`).
 
-> [!IMPORTANT]  
+> [!IMPORTANT]
 > An installation access token expires after 1 hour. Please [see this comment](https://github.com/actions/create-github-app-token/issues/121#issuecomment-2043214796) for alternative approaches if you have long-running processes.
 
 ### Create a token for the current repository
@@ -31,8 +31,8 @@ jobs:
       - uses: actions/create-github-app-token@v3
         id: app-token
         with:
-          client-id: ${{ vars.GITHUB_APP_CLIENT_ID }}
-          private-key: ${{ secrets.GITHUB_APP_PRIVATE_KEY }}
+          client-id: ${{ vars.APP_CLIENT_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
       - uses: ./actions/staging-tests
         with:
           token: ${{ steps.app-token.outputs.token }}
@@ -51,8 +51,8 @@ jobs:
         id: app-token
         with:
           # required
-          client-id: ${{ vars.GITHUB_APP_CLIENT_ID }}
-          private-key: ${{ secrets.GITHUB_APP_PRIVATE_KEY }}
+          client-id: ${{ vars.APP_CLIENT_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
       - uses: actions/checkout@v6
         with:
           token: ${{ steps.app-token.outputs.token }}
@@ -64,7 +64,7 @@ jobs:
           github_token: ${{ steps.app-token.outputs.token }}
 ```
 
-### Create a git committer string for an app installation
+### Create a Git committer string for an app installation
 
 ```yaml
 on: [pull_request]
@@ -77,8 +77,8 @@ jobs:
         id: app-token
         with:
           # required
-          client-id: ${{ vars.GITHUB_APP_CLIENT_ID }}
-          private-key: ${{ secrets.GITHUB_APP_PRIVATE_KEY }}
+          client-id: ${{ vars.APP_CLIENT_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
       - name: Get GitHub App User ID
         id: get-user-id
         run: echo "user-id=$(gh api "/users/${{ steps.app-token.outputs.app-slug }}[bot]" --jq .id)" >> "$GITHUB_OUTPUT"
@@ -89,7 +89,7 @@ jobs:
       - run: echo "committer string is ${{ steps.committer.outputs.string }}"
 ```
 
-### Configure git CLI for an app's bot user
+### Configure Git CLI for an app's bot user
 
 ```yaml
 on: [pull_request]
@@ -102,8 +102,9 @@ jobs:
         id: app-token
         with:
           # required
-          client-id: ${{ vars.GITHUB_APP_CLIENT_ID }}
-          private-key: ${{ secrets.GITHUB_APP_PRIVATE_KEY }}
+          client-id: ${{ vars.APP_CLIENT_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          permission-contents: write
       - name: Get GitHub App User ID
         id: get-user-id
         run: echo "user-id=$(gh api "/users/${{ steps.app-token.outputs.app-slug }}[bot]" --jq .id)" >> "$GITHUB_OUTPUT"
@@ -112,7 +113,10 @@ jobs:
       - run: |
           git config --global user.name '${{ steps.app-token.outputs.app-slug }}[bot]'
           git config --global user.email '${{ steps.get-user-id.outputs.user-id }}+${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com'
-      # git commands like commit work using the bot user
+          gh auth setup-git
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+      # Git commands like commit and push work using the bot user
       - run: |
           git add .
           git commit -m "Auto-generated changes"
@@ -138,8 +142,8 @@ jobs:
       - uses: actions/create-github-app-token@v3
         id: app-token
         with:
-          client-id: ${{ vars.GITHUB_APP_CLIENT_ID }}
-          private-key: ${{ secrets.GITHUB_APP_PRIVATE_KEY }}
+          client-id: ${{ vars.APP_CLIENT_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
       - uses: peter-evans/create-or-update-comment@v4
         with:
@@ -160,8 +164,8 @@ jobs:
       - uses: actions/create-github-app-token@v3
         id: app-token
         with:
-          client-id: ${{ vars.GITHUB_APP_CLIENT_ID }}
-          private-key: ${{ secrets.GITHUB_APP_PRIVATE_KEY }}
+          client-id: ${{ vars.APP_CLIENT_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
           repositories: |
             repo1
@@ -171,6 +175,12 @@ jobs:
           token: ${{ steps.app-token.outputs.token }}
           issue-number: ${{ github.event.issue.number }}
           body: "Hello, World!"
+```
+
+You can include the current repository in the list with `${{ github.repository }}`:
+
+```yaml
+repositories: ${{ github.repository }},repo2
 ```
 
 ### Create a token for all repositories in another owner's installation
@@ -185,8 +195,8 @@ jobs:
       - uses: actions/create-github-app-token@v3
         id: app-token
         with:
-          client-id: ${{ vars.GITHUB_APP_CLIENT_ID }}
-          private-key: ${{ secrets.GITHUB_APP_PRIVATE_KEY }}
+          client-id: ${{ vars.APP_CLIENT_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
           owner: another-owner
       - uses: peter-evans/create-or-update-comment@v4
         with:
@@ -195,10 +205,32 @@ jobs:
           body: "Hello, World!"
 ```
 
+### Create a token for an enterprise installation
+
+```yaml
+on: [workflow_dispatch]
+
+jobs:
+  hello-world:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/create-github-app-token@v3
+        id: app-token
+        with:
+          client-id: ${{ vars.APP_CLIENT_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          enterprise: my-enterprise-slug
+      - name: Call enterprise management REST API with gh
+        run: |
+          gh api /enterprises/my-enterprise-slug/apps/installable_organizations
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+```
+
 ### Create a token with specific permissions
 
 > [!NOTE]
-> Selected permissions must be granted to the installation of the specified app and repository owner. Setting a permission that the installation does not have will result in an error.
+> Selected permissions must be granted to the specified app installation. Setting a permission that the installation does not have will result in an error.
 
 ```yaml
 on: [issues]
@@ -210,8 +242,8 @@ jobs:
       - uses: actions/create-github-app-token@v3
         id: app-token
         with:
-          client-id: ${{ vars.GITHUB_APP_CLIENT_ID }}
-          private-key: ${{ secrets.GITHUB_APP_PRIVATE_KEY }}
+          client-id: ${{ vars.APP_CLIENT_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
           permission-issues: write
       - uses: peter-evans/create-or-update-comment@v4
@@ -252,8 +284,8 @@ jobs:
       - uses: actions/create-github-app-token@v3
         id: app-token
         with:
-          client-id: ${{ vars.GITHUB_APP_CLIENT_ID }}
-          private-key: ${{ secrets.GITHUB_APP_PRIVATE_KEY }}
+          client-id: ${{ vars.APP_CLIENT_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
           owner: ${{ matrix.owners-and-repos.owner }}
           repositories: ${{ join(matrix.owners-and-repos.repos) }}
       - uses: octokit/request-action@v2.x
@@ -310,8 +342,8 @@ If you set `HTTP_PROXY` or `HTTPS_PROXY`, also set `NODE_USE_ENV_PROXY: "1"` on 
     NO_PROXY: github.example.com
     NODE_USE_ENV_PROXY: "1"
   with:
-    client-id: ${{ vars.GITHUB_APP_CLIENT_ID }}
-    private-key: ${{ secrets.GITHUB_APP_PRIVATE_KEY }}
+    client-id: ${{ vars.APP_CLIENT_ID }}
+    private-key: ${{ secrets.APP_PRIVATE_KEY }}
 ```
 
 ## Inputs
@@ -334,14 +366,14 @@ steps:
   - name: Decode the GitHub App Private Key
     id: decode
     run: |
-      private_key=$(echo "${{ secrets.GITHUB_APP_PRIVATE_KEY }}" | base64 -d | awk 'BEGIN {ORS="\\n"} {print}' | head -c -2) &> /dev/null
+      private_key=$(echo "${{ secrets.APP_PRIVATE_KEY }}" | base64 -d | awk 'BEGIN {ORS="\\n"} {print}' | head -c -2) &> /dev/null
       echo "::add-mask::$private_key"
       echo "private-key=$private_key" >> "$GITHUB_OUTPUT"
   - name: Generate GitHub App Token
     id: app-token
     uses: actions/create-github-app-token@v3
     with:
-      client-id: ${{ vars.GITHUB_APP_CLIENT_ID }}
+      client-id: ${{ vars.APP_CLIENT_ID }}
       private-key: ${{ steps.decode.outputs.private-key }}
 ```
 
@@ -355,6 +387,15 @@ steps:
 
 > [!NOTE]
 > If `owner` is set and `repositories` is empty, access will be scoped to all repositories in the provided repository owner's installation. If `owner` and `repositories` are empty, access will be scoped to only the current repository.
+>
+> Repository entries may include an owner, for example `owner/repo1`. The owner portion must match the `owner` input, or the current repository owner if `owner` is unset.
+
+### `enterprise`
+
+**Optional:** The slug of the enterprise account to generate a token for an enterprise installation.
+
+> [!NOTE]
+> The `enterprise` input is mutually exclusive with `owner` and `repositories`. Use it when the GitHub App is installed on an enterprise account. Enterprise installation tokens can call enterprise APIs, but do not grant organization or repository access.
 
 ### `permission-<permission name>`
 
@@ -386,13 +427,14 @@ GitHub App slug.
 
 ## How it works
 
-The action creates an installation access token using [the `POST /app/installations/{installation_id}/access_tokens` endpoint](https://docs.github.com/rest/apps/apps?apiVersion=2022-11-28#create-an-installation-access-token-for-an-app). By default,
+The action creates an installation access token using [the `POST /app/installations/{installation_id}/access_tokens` endpoint](https://docs.github.com/rest/apps/apps?apiVersion=2022-11-28#create-an-installation-access-token-for-an-app).
 
-1. The token is scoped to the current repository or `repositories` if set.
-2. The token inherits all the installation's permissions.
-3. The token is set as output `token` which can be used in subsequent steps.
-4. Unless the `skip-token-revoke` input is set to true, the token is revoked in the `post` step of the action, which means it cannot be passed to another job.
-5. The token is masked, it cannot be logged accidentally.
+The token target depends on the inputs: `enterprise` creates a token for an enterprise installation, `owner` without `repositories` creates a token for all repositories in the owner's installation, `repositories` scopes the token to those repositories, and no target inputs scopes the token to the current repository.
+
+1. The token inherits all the installation's permissions.
+2. The token is set as output `token` which can be used in subsequent steps.
+3. Unless the `skip-token-revoke` input is set to true, the token is revoked in the `post` step of the action, which means it cannot be passed to another job.
+4. The token is masked, it cannot be logged accidentally.
 
 > [!NOTE]
 > Installation permissions can differ from the app's permissions they belong to. Installation permissions are set when an app is installed on an account. When the app adds more permissions after the installation, an account administrator will have to approve the new permissions before they are set on the installation.

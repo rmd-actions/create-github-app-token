@@ -38,7 +38,6 @@ POST /app/installations/123456/access_tokens
 
 exports[`main-custom-github-api-url.test.js > stdout 1`] = `
 Inputs 'owner' and 'repositories' are set. Creating token for the following repositories:
-      
 - actions/create-github-app-token
 ::add-mask::ghs_16C7e42F292c6912E7710c838347Ae178B4a
 
@@ -55,6 +54,105 @@ POST /api/v3/app/installations/123456/access_tokens
 {"repositories":["create-github-app-token"]}
 `;
 
+exports[`main-enterprise-fail-response.test.js > stdout 1`] = `
+Creating enterprise installation token for enterprise "test-enterprise".
+Failed to create token for enterprise "test-enterprise" (attempt 1): GitHub API not available
+::add-mask::ghs_16C7e42F292c6912E7710c838347Ae178B4a
+
+::set-output name=token::ghs_16C7e42F292c6912E7710c838347Ae178B4a
+
+::set-output name=installation-id::123456
+
+::set-output name=app-slug::github-actions
+::save-state name=token::ghs_16C7e42F292c6912E7710c838347Ae178B4a
+::save-state name=expiresAt::2016-07-11T22:14:10Z
+--- REQUESTS ---
+GET /enterprises/test-enterprise/installation
+GET /enterprises/test-enterprise/installation
+POST /app/installations/123456/access_tokens
+null
+`;
+
+exports[`main-enterprise-installation-not-found.test.js > stderr 1`] = `
+Error: No enterprise installation found matching the enterprise slug "test-enterprise".
+    at getTokenFromEnterprise (file://<cwd>/lib/main.js:<line>:<column>)
+    at process.processTicksAndRejections (node:internal/process/task_queues:<line>:<column>)
+    at async pRetry (file://<cwd>/node_modules/p-retry/index.js:<line>:<column>)
+    at async main (file://<cwd>/lib/main.js:<line>:<column>)
+    at async test (file://<cwd>/tests/main.js:<line>:<column>)
+    at async file://<cwd>/tests/main-enterprise-installation-not-found.test.js:<line>:<column>
+`;
+
+exports[`main-enterprise-installation-not-found.test.js > stdout 1`] = `
+Creating enterprise installation token for enterprise "test-enterprise".
+Failed to create token for enterprise "test-enterprise" (attempt 1): No enterprise installation found matching the enterprise slug "test-enterprise".
+::error::No enterprise installation found matching the enterprise slug "test-enterprise".
+--- REQUESTS ---
+GET /enterprises/test-enterprise/installation
+`;
+
+exports[`main-enterprise-mutual-exclusivity-owner.test.js > stderr 1`] = `
+Error: Cannot use 'enterprise' input with 'owner' or 'repositories' inputs
+    at main (file://<cwd>/lib/main.js:<line>:<column>)
+    at run (file://<cwd>/main.js:<line>:<column>)
+    at file://<cwd>/main.js:<line>:<column>
+    at ModuleJob.run (node:internal/modules/esm/module_job:<line>:<column>)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:<line>:<column>)
+    at async file://<cwd>/tests/main-enterprise-mutual-exclusivity-owner.test.js:<line>:<column>
+`;
+
+exports[`main-enterprise-mutual-exclusivity-owner.test.js > stdout 1`] = `
+::error::Cannot use 'enterprise' input with 'owner' or 'repositories' inputs
+`;
+
+exports[`main-enterprise-mutual-exclusivity-repositories.test.js > stderr 1`] = `
+Error: Cannot use 'enterprise' input with 'owner' or 'repositories' inputs
+    at main (file://<cwd>/lib/main.js:<line>:<column>)
+    at run (file://<cwd>/main.js:<line>:<column>)
+    at file://<cwd>/main.js:<line>:<column>
+    at ModuleJob.run (node:internal/modules/esm/module_job:<line>:<column>)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:<line>:<column>)
+    at async file://<cwd>/tests/main-enterprise-mutual-exclusivity-repositories.test.js:<line>:<column>
+`;
+
+exports[`main-enterprise-mutual-exclusivity-repositories.test.js > stdout 1`] = `
+::error::Cannot use 'enterprise' input with 'owner' or 'repositories' inputs
+`;
+
+exports[`main-enterprise-only-success.test.js > stdout 1`] = `
+Creating enterprise installation token for enterprise "test-enterprise".
+::add-mask::ghs_16C7e42F292c6912E7710c838347Ae178B4a
+
+::set-output name=token::ghs_16C7e42F292c6912E7710c838347Ae178B4a
+
+::set-output name=installation-id::123456
+
+::set-output name=app-slug::github-actions
+::save-state name=token::ghs_16C7e42F292c6912E7710c838347Ae178B4a
+::save-state name=expiresAt::2016-07-11T22:14:10Z
+--- REQUESTS ---
+GET /enterprises/test-enterprise/installation
+POST /app/installations/123456/access_tokens
+null
+`;
+
+exports[`main-enterprise-token-permissions-set.test.js > stdout 1`] = `
+Creating enterprise installation token for enterprise "test-enterprise".
+::add-mask::ghs_16C7e42F292c6912E7710c838347Ae178B4a
+
+::set-output name=token::ghs_16C7e42F292c6912E7710c838347Ae178B4a
+
+::set-output name=installation-id::123456
+
+::set-output name=app-slug::github-actions
+::save-state name=token::ghs_16C7e42F292c6912E7710c838347Ae178B4a
+::save-state name=expiresAt::2016-07-11T22:14:10Z
+--- REQUESTS ---
+GET /enterprises/test-enterprise/installation
+POST /app/installations/123456/access_tokens
+{"permissions":{"enterprise_custom_properties_for_organizations":"read"}}
+`;
+
 exports[`main-missing-client-and-app-id.test.js > stderr 1`] = `
 The 'client-id' (or deprecated 'app-id') input must be set to a non-empty string. If using a secret or variable, ensure it is available in this workflow context.
 `;
@@ -65,6 +163,14 @@ exports[`main-missing-client-and-app-id.test.js > stdout 1`] = `
 
 exports[`main-missing-owner.test.js > stderr 1`] = `
 GITHUB_REPOSITORY_OWNER missing, must be set to '<owner>'
+`;
+
+exports[`main-missing-private-key.test.js > stderr 1`] = `
+The 'private-key' input must be set to a non-empty string. If using a secret or variable, ensure it is available in this workflow context.
+`;
+
+exports[`main-missing-private-key.test.js > stdout 1`] = `
+::error::The 'private-key' input must be set to a non-empty string. If using a secret or variable, ensure it is available in this workflow context.
 `;
 
 exports[`main-missing-repository.test.js > stderr 1`] = `
@@ -103,7 +209,6 @@ exports[`main-repo-skew.test.js > stderr 1`] = `
 
 exports[`main-repo-skew.test.js > stdout 1`] = `
 Inputs 'owner' and 'repositories' are set. Creating token for the following repositories:
-      
 - actions/failed-repo
 ::add-mask::ghs_16C7e42F292c6912E7710c838347Ae178B4a
 
@@ -119,6 +224,45 @@ GET /repos/actions/failed-repo/installation
 GET /repos/actions/failed-repo/installation
 POST /app/installations/123456/access_tokens
 {"repositories":["failed-repo"]}
+`;
+
+exports[`main-token-get-owner-set-client-error.test.js > stderr 1`] = `
+RequestError [HttpError]: Forbidden
+    at fetchWrapper (file://<cwd>/node_modules/@octokit/request/dist-bundle/index.js:<line>:<column>)
+    at process.processTicksAndRejections (node:internal/process/task_queues:<line>:<column>)
+    at async hook (file://<cwd>/node_modules/@octokit/auth-app/dist-node/index.js:<line>:<column>)
+    at async getTokenFromOwner (file://<cwd>/lib/main.js:<line>:<column>)
+    at async pRetry (file://<cwd>/node_modules/p-retry/index.js:<line>:<column>)
+    at async main (file://<cwd>/lib/main.js:<line>:<column>)
+    at async test (file://<cwd>/tests/main.js:<line>:<column>)
+    at async file://<cwd>/tests/main-token-get-owner-set-client-error.test.js:<line>:<column> {
+  status: 403,
+  request: {
+    method: 'GET',
+    url: 'https://api.github.com/users/smockle/installation',
+    headers: {
+      accept: 'application/vnd.github.v3+json',
+      'user-agent': 'actions/create-github-app-token',
+      authorization: 'bearer [REDACTED]'
+    },
+    request: { hook: [Function: bound hook] AsyncFunction }
+  },
+  response: {
+    url: 'https://api.github.com/users/smockle/installation',
+    status: 403,
+    headers: { 'content-type': 'application/json' },
+    data: { message: 'Forbidden' }
+  },
+  [cause]: undefined
+}
+`;
+
+exports[`main-token-get-owner-set-client-error.test.js > stdout 1`] = `
+Input 'repositories' is not set. Creating token for all repositories owned by smockle.
+Failed to create token for "smockle" (attempt 1): Forbidden
+::error::Forbidden
+--- REQUESTS ---
+GET /users/smockle/installation
 `;
 
 exports[`main-token-get-owner-set-fail-response.test.js > stdout 1`] = `
@@ -142,9 +286,8 @@ null
 
 exports[`main-token-get-owner-set-repo-fail-response.test.js > stdout 1`] = `
 Inputs 'owner' and 'repositories' are set. Creating token for the following repositories:
-      
 - actions/failed-repo
-Failed to create token for "failed-repo" (attempt 1): GitHub API not available
+Failed to create token for "actions/failed-repo" (attempt 1): GitHub API not available
 ::add-mask::ghs_16C7e42F292c6912E7710c838347Ae178B4a
 
 ::set-output name=token::ghs_16C7e42F292c6912E7710c838347Ae178B4a
@@ -161,9 +304,99 @@ POST /app/installations/123456/access_tokens
 {"repositories":["failed-repo"]}
 `;
 
+exports[`main-token-get-owner-set-repo-full-name.test.js > stdout 1`] = `
+Inputs 'owner' and 'repositories' are set. Creating token for the following repositories:
+- actions/create-github-app-token
+::add-mask::ghs_16C7e42F292c6912E7710c838347Ae178B4a
+
+::set-output name=token::ghs_16C7e42F292c6912E7710c838347Ae178B4a
+
+::set-output name=installation-id::123456
+
+::set-output name=app-slug::github-actions
+::save-state name=token::ghs_16C7e42F292c6912E7710c838347Ae178B4a
+::save-state name=expiresAt::2016-07-11T22:14:10Z
+--- REQUESTS ---
+GET /repos/actions/create-github-app-token/installation
+POST /app/installations/123456/access_tokens
+{"repositories":["create-github-app-token"]}
+`;
+
+exports[`main-token-get-owner-set-repo-invalid-format.test.js > stderr 1`] = `
+Error: Invalid repository 'octocat/hello-world/extra'. Expected 'repository' or 'owner/repository'.
+    at parseRepositoryInput (file://<cwd>/lib/main.js:<line>:<column>)
+    at Array.map (<anonymous>)
+    at normalizeRepositoryTarget (file://<cwd>/lib/main.js:<line>:<column>)
+    at resolveInstallationTarget (file://<cwd>/lib/main.js:<line>:<column>)
+    at main (file://<cwd>/lib/main.js:<line>:<column>)
+    at run (file://<cwd>/main.js:<line>:<column>)
+    at file://<cwd>/main.js:<line>:<column>
+    at ModuleJob.run (node:internal/modules/esm/module_job:<line>:<column>)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:<line>:<column>)
+    at async file://<cwd>/tests/main-token-get-owner-set-repo-invalid-format.test.js:<line>:<column>
+`;
+
+exports[`main-token-get-owner-set-repo-invalid-format.test.js > stdout 1`] = `
+::error::Invalid repository 'octocat/hello-world/extra'. Expected 'repository' or 'owner/repository'.
+`;
+
+exports[`main-token-get-owner-set-repo-network-error.test.js > stdout 1`] = `
+Inputs 'owner' and 'repositories' are set. Creating token for the following repositories:
+- actions/network-repo
+Failed to create token for "actions/network-repo" (attempt 1): fetch failed
+::add-mask::ghs_16C7e42F292c6912E7710c838347Ae178B4a
+
+::set-output name=token::ghs_16C7e42F292c6912E7710c838347Ae178B4a
+
+::set-output name=installation-id::123456
+
+::set-output name=app-slug::github-actions
+::save-state name=token::ghs_16C7e42F292c6912E7710c838347Ae178B4a
+::save-state name=expiresAt::2016-07-11T22:14:10Z
+--- REQUESTS ---
+GET /repos/actions/network-repo/installation
+GET /repos/actions/network-repo/installation
+POST /app/installations/123456/access_tokens
+{"repositories":["network-repo"]}
+`;
+
+exports[`main-token-get-owner-set-repo-non-current-full-name.test.js > stdout 1`] = `
+Inputs 'owner' and 'repositories' are set. Creating token for the following repositories:
+- actions/toolkit
+- actions/checkout
+::add-mask::ghs_16C7e42F292c6912E7710c838347Ae178B4a
+
+::set-output name=token::ghs_16C7e42F292c6912E7710c838347Ae178B4a
+
+::set-output name=installation-id::123456
+
+::set-output name=app-slug::github-actions
+::save-state name=token::ghs_16C7e42F292c6912E7710c838347Ae178B4a
+::save-state name=expiresAt::2016-07-11T22:14:10Z
+--- REQUESTS ---
+GET /repos/actions/toolkit/installation
+POST /app/installations/123456/access_tokens
+{"repositories":["toolkit","checkout"]}
+`;
+
+exports[`main-token-get-owner-set-repo-owner-mismatch.test.js > stderr 1`] = `
+Error: Repository 'octocat/hello-world' includes owner 'octocat', which does not match the resolved owner 'actions'.
+    at normalizeRepositoryTarget (file://<cwd>/lib/main.js:<line>:<column>)
+    at resolveInstallationTarget (file://<cwd>/lib/main.js:<line>:<column>)
+    at main (file://<cwd>/lib/main.js:<line>:<column>)
+    at run (file://<cwd>/main.js:<line>:<column>)
+    at file://<cwd>/main.js:<line>:<column>
+    at ModuleJob.run (node:internal/modules/esm/module_job:<line>:<column>)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:<line>:<column>)
+    at async file://<cwd>/tests/main-token-get-owner-set-repo-owner-mismatch.test.js:<line>:<column>
+`;
+
+exports[`main-token-get-owner-set-repo-owner-mismatch.test.js > stdout 1`] = `
+::error::Repository 'octocat/hello-world' includes owner 'octocat', which does not match the resolved owner 'actions'.
+`;
+
 exports[`main-token-get-owner-set-repo-set-to-many-newline.test.js > stdout 1`] = `
 Inputs 'owner' and 'repositories' are set. Creating token for the following repositories:
-      
 - actions/create-github-app-token
 - actions/toolkit
 - actions/checkout
@@ -184,7 +417,6 @@ POST /app/installations/123456/access_tokens
 
 exports[`main-token-get-owner-set-repo-set-to-many.test.js > stdout 1`] = `
 Inputs 'owner' and 'repositories' are set. Creating token for the following repositories:
-      
 - actions/create-github-app-token
 - actions/toolkit
 - actions/checkout
@@ -205,7 +437,6 @@ POST /app/installations/123456/access_tokens
 
 exports[`main-token-get-owner-set-repo-set-to-one.test.js > stdout 1`] = `
 Inputs 'owner' and 'repositories' are set. Creating token for the following repositories:
-      
 - actions/create-github-app-token
 ::add-mask::ghs_16C7e42F292c6912E7710c838347Ae178B4a
 
@@ -237,6 +468,41 @@ Input 'repositories' is not set. Creating token for all repositories owned by ac
 GET /users/actions/installation
 POST /app/installations/123456/access_tokens
 null
+`;
+
+exports[`main-token-get-owner-unset-repo-full-name-and-bare.test.js > stdout 1`] = `
+No 'owner' input provided. Using default owner 'actions' to create token for the following repositories:
+- actions/create-github-app-token
+- actions/toolkit
+::add-mask::ghs_16C7e42F292c6912E7710c838347Ae178B4a
+
+::set-output name=token::ghs_16C7e42F292c6912E7710c838347Ae178B4a
+
+::set-output name=installation-id::123456
+
+::set-output name=app-slug::github-actions
+::save-state name=token::ghs_16C7e42F292c6912E7710c838347Ae178B4a
+::save-state name=expiresAt::2016-07-11T22:14:10Z
+--- REQUESTS ---
+GET /repos/actions/create-github-app-token/installation
+POST /app/installations/123456/access_tokens
+{"repositories":["create-github-app-token","toolkit"]}
+`;
+
+exports[`main-token-get-owner-unset-repo-owner-mismatch.test.js > stderr 1`] = `
+Error: Repository 'octocat/hello-world' includes owner 'octocat', which does not match the resolved owner 'actions'.
+    at normalizeRepositoryTarget (file://<cwd>/lib/main.js:<line>:<column>)
+    at resolveInstallationTarget (file://<cwd>/lib/main.js:<line>:<column>)
+    at main (file://<cwd>/lib/main.js:<line>:<column>)
+    at run (file://<cwd>/main.js:<line>:<column>)
+    at file://<cwd>/main.js:<line>:<column>
+    at ModuleJob.run (node:internal/modules/esm/module_job:<line>:<column>)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:<line>:<column>)
+    at async file://<cwd>/tests/main-token-get-owner-unset-repo-owner-mismatch.test.js:<line>:<column>
+`;
+
+exports[`main-token-get-owner-unset-repo-owner-mismatch.test.js > stdout 1`] = `
+::error::Repository 'octocat/hello-world' includes owner 'octocat', which does not match the resolved owner 'actions'.
 `;
 
 exports[`main-token-get-owner-unset-repo-set.test.js > stdout 1`] = `
