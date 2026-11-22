@@ -21,17 +21,18 @@ jobs:
     env:
       COMMIT_MESSAGE: 'feat: update permission inputs'
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version-file: package.json
+          package-manager-cache: false
       - name: Install dependencies
         run: npm ci
       - name: Run permission inputs update script
         run: node scripts/update-permission-inputs.js
       - name: Commit changes
         id: auto-commit
-        uses: stefanzweifel/git-auto-commit-action@04702edda442b2e678b25b537cec683a1493fcb9 # v7.1.0
+        uses: stefanzweifel/git-auto-commit-action@d0b01107b5db882071f96de5dd4b54961ea93f4c # v7.2.1
         with:
           commit_message: ${{ env.COMMIT_MESSAGE }}
       - name: Update PR title
